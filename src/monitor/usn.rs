@@ -43,7 +43,10 @@ use windows::{
     core::PCWSTR,
 };
 
-use crate::monitor::{ItemMetadata, Monitor, MonitorOptions};
+use crate::{
+    monitor::{ItemMetadata, Monitor, MonitorOptions},
+    options::TrackOptions,
+};
 
 pub struct Usn {
     handle: Owned<HANDLE>,
@@ -431,15 +434,6 @@ pub struct UsnMonitor {
 }
 
 impl UsnMonitor {
-    pub fn new(usn: Usn, options: MonitorOptions) -> Self {
-        Self {
-            usn,
-            initial_usn: None,
-            end_usn: None,
-            options,
-        }
-    }
-
     // fn convert_reason(reason: u32) -> Vec<Reason> {
     //     const REASONS: [(u32, Reason); 23] = [
     //         (USN_REASON_BASIC_INFO_CHANGE, Reason::Attributes),
@@ -557,9 +551,13 @@ impl UsnMonitor {
 
 #[async_trait]
 impl Monitor for UsnMonitor {
-    fn new(options: MonitorOptions) -> Result<Self> {
-        let usn = Usn::from_path(&options.path)?;
-        Ok(Self::new(usn, options))
+    fn new(options: MonitorOptions, _track_options: TrackOptions) -> Result<Self> {
+        Ok(Self {
+            usn: Usn::from_path(&options.path)?,
+            initial_usn: None,
+            end_usn: None,
+            options,
+        })
     }
 
     async fn start(&mut self) -> Result<()> {

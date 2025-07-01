@@ -22,6 +22,7 @@ use crate::{
         ItemAction, ItemMetadata, Monitor, MonitorOptions,
         procmon::xml::{Event, LogFile, Process},
     },
+    options::TrackOptions,
 };
 
 #[derive(Default)]
@@ -42,6 +43,7 @@ struct MonitorResult {
 
 pub struct ProcmonMonitor {
     options: MonitorOptions,
+    track_options: TrackOptions,
     state: MonitorState,
 }
 
@@ -100,6 +102,7 @@ impl ProcmonMonitor {
 
     async fn run(
         options: MonitorOptions,
+        track_options: TrackOptions,
         stop_signal: CancellationToken,
         started_signal: CancellationToken,
     ) -> Result<MonitorResult> {
@@ -107,9 +110,9 @@ impl ProcmonMonitor {
         let _pmc_guard = DropGuard::new({
             let pmc_path = pmc_path.clone();
             move || {
-                log::info!("Deleting temporary PMC file: {:?}", pmc_path);
+                log::info!("Deleting temporary PMC file: {}", pmc_path.display());
                 std::fs::remove_file(pmc_path).unwrap_or_else(|e| {
-                    log::warn!("Failed to delete PMC file: {:?}", e);
+                    log::warn!("Failed to delete PMC file: {e:?}");
                 });
             }
         });
@@ -119,9 +122,9 @@ impl ProcmonMonitor {
         let _pml_guard = DropGuard::new({
             let pml_path = pml_path.clone();
             move || {
-                log::info!("Deleting temporary PML file: {:?}", pml_path);
+                log::info!("Deleting temporary PML file: {}", pml_path.display());
                 std::fs::remove_file(pml_path).unwrap_or_else(|e| {
-                    log::warn!("Failed to delete PML file: {:?}", e);
+                    log::warn!("Failed to delete PML file: {e:?}");
                 });
             }
         });
@@ -148,9 +151,9 @@ impl ProcmonMonitor {
         let _xml_guard = DropGuard::new({
             let xml_path = xml_path.clone();
             move || {
-                log::info!("Deleting temporary XML file: {:?}", xml_path);
+                log::info!("Deleting temporary XML file: {}", xml_path.display());
                 std::fs::remove_file(xml_path).unwrap_or_else(|e| {
-                    log::warn!("Failed to delete XML file: {:?}", e);
+                    log::warn!("Failed to delete XML file: {e:?}");
                 });
             }
         });
@@ -168,12 +171,12 @@ impl ProcmonMonitor {
 
         if !xml_path.exists() {
             bail!(
-                "Procmon did not create the output XML file at {:?}",
-                xml_path
+                "Procmon did not create the output XML file at {}",
+                xml_path.display()
             );
         }
 
-        log::info!("Procmon output saved to {:?}", xml_path);
+        log::info!("Procmon output saved to {}", xml_path.display());
 
         let xml_reader = std::fs::File::open(&xml_path)?;
         let xml_reader = std::io::BufReader::new(xml_reader);
@@ -182,7 +185,7 @@ impl ProcmonMonitor {
         let document: LogFile = serde_xml_rs::from_reader(xml_reader)?;
         log::info!("Parsed XML file");
 
-        let proc_map = if let Some(filter_pid) = options.pid {
+        let proc_map = if let Some(filter_pid) = track_options.pid {
             let mut processes = BTreeMap::new();
             let mut pid_idx = None;
             for process in document.processes.processes {
@@ -210,10 +213,10 @@ impl ProcmonMonitor {
                 continue;
             }
 
-            if let Some(filter_pid) = options.pid {
+            if let Some(filter_pid) = track_options.pid {
                 if !Self::pid_matches(
                     filter_pid,
-                    options.child_processes,
+                    track_options.child_processes,
                     proc_map.as_ref().unwrap(),
                     &event,
                 ) {
@@ -503,9 +506,10 @@ impl ProcmonMonitor {
 
 #[async_trait]
 impl Monitor for ProcmonMonitor {
-    fn new(options: MonitorOptions) -> Result<Self> {
+    fn new(options: MonitorOptions, track_options: TrackOptions) -> Result<Self> {
         Ok(Self {
             options,
+            track_options,
             state: MonitorState::NotStarted,
         })
     }
@@ -517,6 +521,7 @@ impl Monitor for ProcmonMonitor {
             stop_signal: stop_token.clone(),
             handle: tokio::spawn(Self::run(
                 self.options.clone(),
+                self.track_options.clone(),
                 stop_token,
                 start_token.clone(),
             )),

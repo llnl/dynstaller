@@ -4,7 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Serialize;
 
-use crate::options::MonitorOptions;
+use crate::options::{MonitorMethod, MonitorOptions, TrackOptions};
 
 pub mod procmon;
 pub mod usn;
@@ -12,7 +12,7 @@ pub mod winapi;
 
 #[async_trait]
 pub trait Monitor {
-    fn new(options: MonitorOptions) -> Result<Self>
+    fn new(options: MonitorOptions, track_options: TrackOptions) -> Result<Self>
     where
         Self: Sized;
 
@@ -84,5 +84,19 @@ impl From<ItemAction> for ItemMetadata {
             deleted,
             renamed,
         }
+    }
+}
+
+pub fn new_boxed(options: MonitorOptions, track_options: TrackOptions) -> Result<Box<dyn Monitor>> {
+    match options.method {
+        MonitorMethod::Usn => Ok(Box::new(usn::UsnMonitor::new(options, track_options)?)),
+        MonitorMethod::WinApi => Ok(Box::new(winapi::WinApiMonitor::new(
+            options,
+            track_options,
+        )?)),
+        MonitorMethod::Procmon => Ok(Box::new(procmon::ProcmonMonitor::new(
+            options,
+            track_options,
+        )?)),
     }
 }

@@ -28,6 +28,7 @@ use windows::{
 
 use crate::{
     monitor::{ItemMetadata, Monitor, MonitorOptions},
+    options::TrackOptions,
     overlapped_future::OverlappedFuture,
 };
 
@@ -172,14 +173,6 @@ pub struct WinApiMonitor {
 }
 
 impl WinApiMonitor {
-    pub fn new(api: WinApi, options: MonitorOptions) -> Self {
-        Self {
-            api: Arc::new(api),
-            state: Default::default(),
-            options,
-        }
-    }
-
     fn notify_change_mask(&self) -> FILE_NOTIFY_CHANGE {
         let mut mask = FILE_NOTIFY_CHANGE(0);
 
@@ -215,9 +208,12 @@ impl WinApiMonitor {
 
 #[async_trait]
 impl Monitor for WinApiMonitor {
-    fn new(options: MonitorOptions) -> Result<Self> {
-        let api = WinApi::new(options.path.as_os_str())?;
-        Ok(Self::new(api, options))
+    fn new(options: MonitorOptions, _track_options: TrackOptions) -> Result<Self> {
+        Ok(Self {
+            api: Arc::new(WinApi::new(options.path.as_os_str())?),
+            state: Default::default(),
+            options,
+        })
     }
 
     async fn start(&mut self) -> Result<()> {

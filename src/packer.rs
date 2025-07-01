@@ -112,6 +112,16 @@ impl Packer {
                 }
             };
 
+            let file_len = file.metadata()?.len();
+            if file_len > self.packer_options.size_limit {
+                log::warn!(
+                    "File {} exceeds size limit ({} bytes), skipping",
+                    file_path.display(),
+                    file_len
+                );
+                continue;
+            }
+
             // Create safe ZIP entry path using the helper function
             let zip_path = match Self::create_zip_entry_path(file_path, &base_path) {
                 Ok(path) => path,
@@ -127,7 +137,7 @@ impl Packer {
 
             log::debug!(
                 "Writing file ({} bytes): {} -> {}",
-                file.metadata()?.len(),
+                file_len,
                 file_path.display(),
                 zip_path
             );

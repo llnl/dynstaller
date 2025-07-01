@@ -28,7 +28,10 @@ pub struct MonitorOptions {
     /// This option is only supported by the Procmon method.
     #[arg(long = "registry", short = 'R')]
     pub add_registry: bool,
+}
 
+#[derive(Args, Serialize, Debug, Clone)]
+pub struct TrackOptions {
     /// The process ID to filter changes by. If not specified, all processes will be monitored.
     /// This option is only supported by the Procmon method.
     #[arg(long)]
@@ -38,6 +41,26 @@ pub struct MonitorOptions {
     /// Defaults to true.
     #[arg(long = "children", default_value = "true")]
     pub child_processes: bool,
+}
+
+#[derive(Args, Serialize, Debug, Clone)]
+pub struct LaunchOptions {
+    /// The path to the executable to launch.
+    pub process: PathBuf,
+    /// The arguments to pass to the executable.
+    #[arg(trailing_var_arg = true)]
+    pub args: Vec<String>,
+    /// If true, child processes of the specified PID will also be monitored.
+    /// This option is only supported by the Procmon method.
+    /// Defaults to true.
+    #[arg(long = "children", default_value = "true")]
+    pub child_processes: bool,
+}
+
+#[derive(Args, Serialize, Debug, Clone)]
+pub struct HostOptions {
+    #[command(flatten)]
+    pub launch_options: LaunchOptions,
 }
 
 #[derive(ValueEnum, Serialize, Debug, Clone, Copy)]
