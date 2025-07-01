@@ -5,28 +5,18 @@ mod monitor;
 mod options;
 mod overlapped_future;
 mod packer;
+mod process;
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::{Parser, Subcommand, crate_authors, crate_description, crate_name};
 use shadow_rs::shadow;
-use tokio::{io::AsyncBufReadExt, process::Command};
-use windows::{
-    Win32::{
-        Foundation::ERROR_NO_MORE_FILES,
-        System::{
-            Diagnostics::ToolHelp::{
-                CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First,
-                Thread32Next,
-            },
-            Threading::{CREATE_SUSPENDED, OpenThread, ResumeThread, THREAD_SUSPEND_RESUME},
-        },
-    },
-    core::Owned,
-};
+use tokio::process::Command;
+use windows::Win32::System::Threading::CREATE_SUSPENDED;
 
 use crate::{
     options::{HostOptions, LaunchOptions, MonitorOptions, PackerOptions, TrackOptions},
     packer::Packer,
+    process::resume_process,
 };
 
 shadow!(build);
@@ -89,85 +79,41 @@ async fn main() -> Result<()> {
                 log::info!("Began execution on launched process.");
             }
 
-            log::info!("Press Enter to stop monitoring early...");
-            let mut stdin = tokio::io::BufReader::new(tokio::io::stdin()).lines();
-            tokio::select! {
-                _ = stdin.next_line() => {
-                    cmd.start_kill()?;
-                    log::info!("Sending SIGKILL.");
-                }
-                status = cmd.wait() => {
-                    log::info!("Process finished with exit status {:?}.", status?);
-                }
-            }
+            let status = cmd.wait().await?;
+            log::info!("Process finished with exit status {:?}.", status);
 
             log::info!("Stopping monitoring...");
             monitor.stop().await?;
-
             log::info!("Monitoring stopped.");
+
             log::info!("Writing results...");
             let packer = Packer::new(cli.monitor_options, cli.packer_options, monitor);
             packer.write_out()?;
-
             log::info!("Results written successfully.");
+
             Ok(())
         }
         CommandType::GuestTrack(track_options) => {
             let mut monitor = monitor::new_boxed(cli.monitor_options.clone(), track_options)?;
             monitor.start().await?;
-
             log::info!("Monitoring started.");
+
             log::info!("Press Enter to stop monitoring...");
             std::io::stdin().read_line(&mut String::new())?;
 
             log::info!("Stopping monitoring...");
             monitor.stop().await?;
-
             log::info!("Monitoring stopped.");
+
             log::info!("Writing results...");
             let packer = Packer::new(cli.monitor_options, cli.packer_options, monitor);
             packer.write_out()?;
-
             log::info!("Results written successfully.");
+
             Ok(())
         }
         CommandType::HostLaunch(_host_options) => {
             todo!()
         }
     }
-}
-
-fn resume_process(pid: u32) -> Result<()> {
-    let snapshot = unsafe { Owned::new(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid)?) };
-
-    let mut te = THREADENTRY32 {
-        dwSize: std::mem::size_of::<THREADENTRY32>() as u32,
-        ..Default::default()
-    };
-
-    unsafe { Thread32First(*snapshot, &mut te) }?;
-
-    let mut tid = None;
-    loop {
-        if te.th32OwnerProcessID == pid {
-            tid = Some(te.th32ThreadID);
-        }
-        let result = unsafe { Thread32Next(*snapshot, &mut te) };
-        if let Err(e) = result {
-            if e.code() == ERROR_NO_MORE_FILES.to_hresult() {
-                break;
-            }
-            bail!(e);
-        }
-    }
-
-    let tid = match tid {
-        Some(tid) => tid,
-        None => bail!("No thread found for process ID {}", pid),
-    };
-
-    let thread_handle = unsafe { Owned::new(OpenThread(THREAD_SUSPEND_RESUME, false, tid)?) };
-    unsafe { ResumeThread(*thread_handle) };
-
-    Ok(())
 }
