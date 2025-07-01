@@ -1,0 +1,811 @@
+[
+    {
+        "to": "VolumeDismount",
+        "from": "IRP_MJ_VOLUME_DISMOUNT"
+    },
+    {
+        "to": "VolumeMount",
+        "from": "IRP_MJ_VOLUME_MOUNT"
+    },
+    {
+        "to": "FASTIO_MDL_WRITE_COMPLETE",
+        "from": "FASTIO_MDL_WRITE_COMPLETE"
+    },
+    {
+        "to": "WriteFile",
+        "from": "FASTIO_PREPARE_MDL_WRITE"
+    },
+    {
+        "to": "FASTIO_MDL_READ_COMPLETE",
+        "from": "FASTIO_MDL_READ_COMPLETE"
+    },
+    {
+        "to": "ReadFile",
+        "from": "FASTIO_MDL_READ"
+    },
+    {
+        "to": "QueryOpen",
+        "from": "FASTIO_NETWORK_QUERY_OPEN"
+    },
+    {
+        "to": "FASTIO_CHECK_IF_POSSIBLE",
+        "from": "FASTIO_CHECK_IF_POSSIBLE"
+    },
+    {
+        "to": "IRP_MJ_12",
+        "from": "IRP_MJ_12"
+    },
+    {
+        "to": "IRP_MJ_11",
+        "from": "IRP_MJ_11"
+    },
+    {
+        "to": "IRP_MJ_10",
+        "from": "IRP_MJ_10"
+    },
+    {
+        "to": "IRP_MJ_9",
+        "from": "IRP_MJ_9"
+    },
+    {
+        "to": "IRP_MJ_8",
+        "from": "IRP_MJ_8"
+    },
+    {
+        "to": "FASTIO_NOTIFY_STREAM_FO_CREATION",
+        "from": "FASTIO_NOTIFY_STREAM_FO_CREATION"
+    },
+    {
+        "to": "FASTIO_RELEASE_FOR_CC_FLUSH",
+        "from": "FASTIO_RELEASE_FOR_CC_FLUSH"
+    },
+    {
+        "to": "FASTIO_ACQUIRE_FOR_CC_FLUSH",
+        "from": "FASTIO_ACQUIRE_FOR_CC_FLUSH"
+    },
+    {
+        "to": "FASTIO_RELEASE_FOR_MOD_WRITE",
+        "from": "FASTIO_RELEASE_FOR_MOD_WRITE"
+    },
+    {
+        "to": "FASTIO_ACQUIRE_FOR_MOD_WRITE",
+        "from": "FASTIO_ACQUIRE_FOR_MOD_WRITE"
+    },
+    {
+        "to": "FASTIO_RELEASE_FOR_SECTION_SYNCHRONIZATION",
+        "from": "FASTIO_RELEASE_FOR_SECTION_SYNCHRONIZATION"
+    },
+    {
+        "to": "CreateFileMapping",
+        "from": "FASTIO_ACQUIRE_FOR_SECTION_SYNCHRONIZATION"
+    },
+    {
+        "to": "CreateFile",
+        "from": "IRP_MJ_CREATE"
+    },
+    {
+        "to": "CreatePipe",
+        "from": "IRP_MJ_CREATE_NAMED_PIPE"
+    },
+    {
+        "to": "IRP_MJ_CLOSE",
+        "from": "IRP_MJ_CLOSE"
+    },
+    {
+        "to": "ReadFile",
+        "from": "IRP_MJ_READ",
+        "additional": [
+            {
+                "id": 255,
+                "irp": "IRP_MJ_READ",
+                "fastio": "FASTIO_READ"
+            }
+        ]
+    },
+    {
+        "to": "WriteFile",
+        "from": "IRP_MJ_WRITE",
+        "additional": [
+            {
+                "id": 255,
+                "irp": "IRP_MJ_WRITE",
+                "fastio": "FASTIO_WRITE"
+            }
+        ]
+    },
+    {
+        "to": "QueryInformationFile",
+        "from": "IRP_MJ_QUERY_INFORMATION",
+        "additional": [
+            {
+                "id": 18,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryAllInformationFile"
+            },
+            {
+                "id": 35,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryAttributeTagFile"
+            },
+            {
+                "id": 4,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryBasicInformationFile"
+            },
+            {
+                "id": 28,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryCompressionInformationFile"
+            },
+            {
+                "id": 7,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryEaInformationFile"
+            },
+            {
+                "id": 6,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryFileInternalInformationFile"
+            },
+            {
+                "id": 31,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryMoveClusterInformationFile"
+            },
+            {
+                "id": 34,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryNetworkOpenInformationFile"
+            },
+            {
+                "id": 14,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryPositionInformationFile"
+            },
+            {
+                "id": 5,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryStandardInformationFile"
+            },
+            {
+                "id": 22,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryStreamInformationFile"
+            },
+            {
+                "id": 9,
+                "irp": "IRP_MJ_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryNameInformationFile"
+            },
+            {
+                "id": 40,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryShortNameInformationFile"
+            },
+            {
+                "id": 48,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryNormalizedNameInformationFile"
+            },
+            {
+                "id": 49,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryNetworkPhysicalNameInformationFile"
+            },
+            {
+                "id": 37,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIdBothDirectory"
+            },
+            {
+                "id": 39,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryValidDataLength"
+            },
+            {
+                "id": 43,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIoPiorityHint"
+            },
+            {
+                "id": 46,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryLinks"
+            },
+            {
+                "id": 29,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryId"
+            },
+            {
+                "id": 20,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryEndOfFile"
+            },
+            {
+                "id": 35,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryAttributeTag"
+            },
+            {
+                "id": 50,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIdGlobalTxDirectoryInformation"
+            },
+            {
+                "id": 51,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIsRemoteDeviceInformation"
+            },
+            {
+                "id": 52,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryAttributeCacheInformation,"
+            },
+            {
+                "id": 53,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryNumaNodeInformation"
+            },
+            {
+                "id": 54,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryStandardLinkInformation"
+            },
+            {
+                "id": 55,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryRemoteProtocolInformation"
+            },
+            {
+                "id": 56,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryRenameInformationBypassAccessCheck"
+            },
+            {
+                "id": 57,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryLinkInformationBypassAccessCheck"
+            },
+            {
+                "id": 58,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryVolumeNameInformation"
+            },
+            {
+                "id": 59,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIdInformation"
+            },
+            {
+                "id": 60,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIdExtdDirectoryInformation"
+            },
+            {
+                "id": 62,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryHardLinkFullIdInformation"
+            },
+            {
+                "id": 63,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryIdExtdBothDirectoryInformation"
+            },
+            {
+                "id": 67,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryDesiredStorageClassInformation"
+            },
+            {
+                "id": 68,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryStatInformation"
+            },
+            {
+                "id": 69,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryMemoryPartitionInformation"
+            },
+            {
+                "id": 70,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QuerySatLxInformation"
+            },
+            {
+                "id": 71,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryCaseSensitiveInformation"
+            },
+            {
+                "id": 72,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryLinkInformationEx"
+            },
+            {
+                "id": 73,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryLinkInfomraitonBypassAccessCheck"
+            },
+            {
+                "id": 74,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryStorageReservedIdInformation"
+            },
+            {
+                "id": 75,
+                "irp": "IRP_MN_QUERY_INFORMATION",
+                "fastio": "FASTIO_QUERY_INFORMATION",
+                "name": "QueryCaseSensitiveInformationForceAccessCheck"
+            }
+        ]
+    },
+    {
+        "to": "SetInformationFile",
+        "from": "IRP_MJ_SET_INFORMATION",
+        "additional": [
+            {
+                "id": 19,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetAllocationInformationFile"
+            },
+            {
+                "id": 4,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetBasicInformationFile"
+            },
+            {
+                "id": 13,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetDispositionInformationFile"
+            },
+            {
+                "id": 20,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetEndOfFileInformationFile"
+            },
+            {
+                "id": 11,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetLinkInformationFile"
+            },
+            {
+                "id": 14,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetPositionInformationFile"
+            },
+            {
+                "id": 10,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetRenameInformationFile"
+            },
+            {
+                "id": 39,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetValidDataLengthInformationFile"
+            },
+            {
+                "id": 22,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetFileStreamInformation"
+            },
+            {
+                "id": 23,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetPipeInformation"
+            },
+            {
+                "id": 40,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetShortNameInformation"
+            },
+            {
+                "id": 64,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetDispositionInformationEx"
+            },
+            {
+                "id": 61,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetReplaceCompletionInformation"
+            },
+            {
+                "id": 65,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetRenameInformationEx"
+            },
+            {
+                "id": 66,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetRenameInformationExBypassAccessCheck"
+            },
+            {
+                "id": 74,
+                "irp": "IRP_MJ_SET_INFORMATION",
+                "fastio": "FASTIO_SET_INFORMATION",
+                "name": "SetStorageReservedIdInformation"
+            }
+        ]
+    },
+    {
+        "to": "QueryEAFile",
+        "from": "IRP_MJ_QUERY_EA"
+    },
+    {
+        "to": "SetEAFile",
+        "from": "IRP_MJ_SET_EA"
+    },
+    {
+        "to": "FlushBuffersFile",
+        "from": "IRP_MJ_FLUSH_BUFFERS"
+    },
+    {
+        "to": "QueryVolumeInformation",
+        "from": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+        "additional": [
+            {
+                "id": 1,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryInformationVolume"
+            },
+            {
+                "id": 2,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryLabelInformationVolume"
+            },
+            {
+                "id": 3,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QuerySizeInformationVolume"
+            },
+            {
+                "id": 4,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryDeviceInformationVolume"
+            },
+            {
+                "id": 5,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryAttributeInformationVolume"
+            },
+            {
+                "id": 6,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryControlInformationVolume"
+            },
+            {
+                "id": 7,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryFullSizeInformationVolume"
+            },
+            {
+                "id": 8,
+                "irp": "IRP_MJ_QUERY_VOLUME_INFORMATION",
+                "fastio": "FASTIO_QUERY_VOLUME_INFORMATION",
+                "name": "QueryObjectIdInformationVolume"
+            }
+        ]
+    },
+    {
+        "to": "SetVolumeInformation",
+        "from": "IRP_MJ_SET_VOLUME_INFORMATION"
+    },
+    {
+        "to": "DirectoryControl",
+        "from": "IRP_MJ_DIRECTORY_CONTROL",
+        "additional": [
+            {
+                "id": 1,
+                "irp": "IRP_MJ_DIRECTORY_CONTROL",
+                "fastio": "FASTIO_DIRECTORY_CONTROL",
+                "name": "QueryDirectory"
+            },
+            {
+                "id": 2,
+                "irp": "IRP_MJ_DIRECTORY_CONTROL",
+                "fastio": "FASTIO_DIRECTORY_CONTROL",
+                "name": "NotifyChangeDirectory"
+            }
+        ]
+    },
+    {
+        "to": "FileSystemControl",
+        "from": "IRP_MJ_FILE_SYSTEM_CONTROL"
+    },
+    {
+        "to": "DeviceIoControl",
+        "from": "IRP_MJ_DEVICE_CONTROL"
+    },
+    {
+        "to": "InternalDeviceIoControl",
+        "from": "IRP_MJ_INTERNAL_DEVICE_CONTROL"
+    },
+    {
+        "to": "Shutdown",
+        "from": "IRP_MJ_SHUTDOWN"
+    },
+    {
+        "to": "LockUnlockFile",
+        "from": "IRP_MJ_LOCK_CONTROL",
+        "additional": [
+            {
+                "id": 1,
+                "irp": "IRP_MJ_LOCK_CONTROL",
+                "fastio": "FASTIO_LOCK",
+                "name": "LockFile"
+            },
+            {
+                "id": 2,
+                "irp": "IRP_MJ_LOCK_CONTROL",
+                "fastio": "FASTIO_UNLOCK_SINGLE",
+                "name": "UnlockFileSingle"
+            },
+            {
+                "id": 3,
+                "irp": "IRP_MJ_LOCK_CONTROL",
+                "fastio": "FASTIO_UNLOCK_ALL",
+                "name": "UnlockFileAll"
+            },
+            {
+                "id": 4,
+                "irp": "IRP_MJ_LOCK_CONTROL",
+                "fastio": "FASTIO_UNLOCK_ALL_BY_KEY",
+                "name": "UnlockFileByKey"
+            }
+        ]
+    },
+    {
+        "to": "CloseFile",
+        "from": "IRP_MJ_CLEANUP"
+    },
+    {
+        "to": "CreateMailSlot",
+        "from": "IRP_MJ_CREATE_MAILSLOT"
+    },
+    {
+        "to": "QuerySecurityFile",
+        "from": "IRP_MJ_QUERY_SECURITY"
+    },
+    {
+        "to": "SetSecurityFile",
+        "from": "IRP_MJ_SET_SECURITY"
+    },
+    {
+        "to": "Power",
+        "from": "IRP_MJ_POWER"
+    },
+    {
+        "to": "SystemControl",
+        "from": "IRP_MJ_SYSTEM_CONTROL"
+    },
+    {
+        "to": "DeviceChange",
+        "from": "IRP_MJ_DEVICE_CHANGE"
+    },
+    {
+        "to": "QueryFileQuota",
+        "from": "IRP_MJ_QUERY_QUOTA"
+    },
+    {
+        "to": "SetFileQuota",
+        "from": "IRP_MJ_SET_QUOTA"
+    },
+    {
+        "to": "PlugAndPlay",
+        "from": "IRP_MJ_PNP",
+        "additional": [
+            {
+                "id": 0,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "StartDevice"
+            },
+            {
+                "id": 1,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryRemoveDevice"
+            },
+            {
+                "id": 2,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "RemoveDevice"
+            },
+            {
+                "id": 3,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "CancelRemoveDevice"
+            },
+            {
+                "id": 4,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "StopDevice"
+            },
+            {
+                "id": 5,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryStopDevice"
+            },
+            {
+                "id": 6,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "CancelStopDevice"
+            },
+            {
+                "id": 7,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryDeviceRelations"
+            },
+            {
+                "id": 8,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryInterface"
+            },
+            {
+                "id": 9,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryCapabilities"
+            },
+            {
+                "id": 10,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryResources"
+            },
+            {
+                "id": 11,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryResourceRequirements"
+            },
+            {
+                "id": 12,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryDeviceText"
+            },
+            {
+                "id": 13,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "FilterResourceRequirements"
+            },
+            {
+                "id": 15,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "ReadConfig"
+            },
+            {
+                "id": 16,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "WriteConfig"
+            },
+            {
+                "id": 17,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "Eject"
+            },
+            {
+                "id": 18,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "SetLock"
+            },
+            {
+                "id": 19,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryId"
+            },
+            {
+                "id": 20,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryPnpDeviceState"
+            },
+            {
+                "id": 21,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryBusInformation"
+            },
+            {
+                "id": 22,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "DeviceUsageNotification"
+            },
+            {
+                "id": 23,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "SurpriseRemoval"
+            },
+            {
+                "id": 24,
+                "irp": "IRP_MJ_PNP",
+                "fastio": "IRP_MJ_PNP",
+                "name": "QueryLegacyBusInformation"
+            }
+        ]
+    },
+    {
+        "from": "IRP_MJ_MAXIMUM_FUNCTION"
+    }
+]

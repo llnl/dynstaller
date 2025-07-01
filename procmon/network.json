@@ -1,0 +1,22 @@
+[
+    "UDP Unknown",
+    "TCP Unknown",
+    "UDP Other",
+    "TCP Other",
+    "UDP Send",
+    "TCP Send",
+    "UDP Receive",
+    "TCP Receive",
+    "UDP Accept",
+    "TCP Accept",
+    "UDP Connect",
+    "TCP Connect",
+    "UDP Disconnect",
+    "TCP Disconnect",
+    "UDP Reconnect",
+    "TCP Reconnect",
+    "UDP Retransmit",
+    "TCP Retransmit",
+    "UDP TCPCopy",
+    "TCP TCPCopy"
+]

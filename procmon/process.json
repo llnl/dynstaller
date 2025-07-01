@@ -1,0 +1,12 @@
+[
+    "Process Defined",
+    "Process Create",
+    "Process Exit",
+    "Thread Create",
+    "Thread Exit",
+    "Load Image",
+    "Thread Profile",
+    "Process Start",
+    "Process Statistics",
+    "System Statistics"
+]

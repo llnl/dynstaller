@@ -1,0 +1,42 @@
+[package]
+name = "dynstaller"
+authors = ["Asriel Margarian <margarian1@llnl.gov>"]
+description = "Dynamically retrieve installation files and metadata in a virtualized environment."
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1.0.219", features = ["derive"] }
+serde-xml-rs = "0.8.1"
+anyhow = "1.0.98"
+async-trait = "0.1.88"
+clap = { version = "4.5.40", features = ["derive", "cargo"] }
+either = "1.15.0"
+env_logger = "0.11.8"
+log = "0.4.27"
+shadow-rs = { version = "1.1.1", default-features = false }
+tokio = { version = "1.45.1", features = [
+    "process",
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "time",
+] }
+tokio-util = "0.7.15"
+widestring = "1.2.0"
+windows = { version = "0.61.1", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_System_Ioctl",
+    "Win32_System_Threading",
+] }
+fastrand = "2.3.0"
+regex = "1.11.1"
+serde_json = "1.0.140"
+zip = "4.2.0"
+time = { version = "0.3.41", features = ["serde", "formatting"] }
+
+[build-dependencies]
+shadow-rs = "1.1.1"

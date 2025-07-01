@@ -1,0 +1,23 @@
+[
+    "RegOpenKey",
+    "RegCreateKey",
+    "RegCloseKey",
+    "RegQueryKey",
+    "RegSetValue",
+    "RegQueryValue",
+    "RegEnumValue",
+    "RegEnumKey",
+    "RegSetInfoKey",
+    "RegDeleteKey",
+    "RegDeleteValue",
+    "RegFlushKey",
+    "RegLoadKey",
+    "RegUnloadKey",
+    "RegRenameKey",
+    "RegQueryMultipleValueKey",
+    "RegSetKeySecurity",
+    "RegQueryKeySecurity",
+    "RegOpenKey2",
+    "RegRestorekey",
+    "RegSaveKey"
+]
