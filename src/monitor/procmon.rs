@@ -1,7 +1,6 @@
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     ffi::OsStr,
-    iter::repeat_with,
     ops::Deref,
     path::PathBuf,
     process::Stdio,
@@ -17,12 +16,12 @@ use tokio_util::sync::CancellationToken;
 use windows::Win32::System::Threading::CREATE_NEW_CONSOLE;
 
 use crate::{
-    guard::DropGuard,
     monitor::{
         ItemAction, ItemMetadata, Monitor, MonitorOptions,
         procmon::xml::{Event, LogFile, Process},
     },
     options::TrackOptions,
+    utils::{DropGuard, create_temp_path},
 };
 
 #[derive(Default)]
@@ -88,25 +87,13 @@ impl ProcmonMonitor {
         Ok(())
     }
 
-    fn create_output_path(ext: &str) -> PathBuf {
-        let temp_path = std::env::temp_dir();
-
-        loop {
-            let filename: String = repeat_with(fastrand::alphabetic).take(10).collect();
-            let output_path = temp_path.join(filename).with_extension(ext);
-            if !output_path.exists() {
-                return output_path;
-            }
-        }
-    }
-
     async fn run(
         options: MonitorOptions,
         track_options: TrackOptions,
         stop_signal: CancellationToken,
         started_signal: CancellationToken,
     ) -> Result<MonitorResult> {
-        let pmc_path = Self::create_output_path("pmc");
+        let pmc_path = create_temp_path(Some("pmc"));
         let _pmc_guard = DropGuard::new({
             let pmc_path = pmc_path.clone();
             move || {
@@ -118,7 +105,7 @@ impl ProcmonMonitor {
         });
         std::fs::write(&pmc_path, include_bytes!("../../procmon/filter.pmc"))?;
 
-        let pml_path = Self::create_output_path("pml");
+        let pml_path = create_temp_path(Some("pml"));
         let _pml_guard = DropGuard::new({
             let pml_path = pml_path.clone();
             move || {
@@ -147,7 +134,7 @@ impl ProcmonMonitor {
 
         Self::run_cmd(&[OsStr::new("/Terminate")], None).await?;
 
-        let xml_path = Self::create_output_path("xml");
+        let xml_path = create_temp_path(Some("xml"));
         let _xml_guard = DropGuard::new({
             let xml_path = xml_path.clone();
             move || {
@@ -216,7 +203,7 @@ impl ProcmonMonitor {
             if let Some(filter_pid) = track_options.pid {
                 if !Self::pid_matches(
                     filter_pid,
-                    track_options.child_processes,
+                    !track_options.no_children,
                     proc_map.as_ref().unwrap(),
                     &event,
                 ) {

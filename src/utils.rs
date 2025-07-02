@@ -1,3 +1,5 @@
+use std::{iter::repeat_with, path::PathBuf};
+
 use anyhow::{Result, bail};
 use windows::{
     Win32::{
@@ -46,4 +48,39 @@ pub fn resume_process(pid: u32) -> Result<()> {
     unsafe { ResumeThread(*thread_handle) };
 
     Ok(())
+}
+
+pub fn create_temp_name() -> String {
+    repeat_with(fastrand::alphabetic).take(10).collect()
+}
+
+pub fn create_temp_path(ext: Option<&str>) -> PathBuf {
+    let temp_path = std::env::temp_dir();
+
+    loop {
+        let mut output_path = temp_path.join(create_temp_name());
+        if let Some(extension) = ext {
+            output_path.set_extension(extension);
+        }
+        if !output_path.exists() {
+            return output_path;
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct DropGuard<F: FnOnce()>(Option<F>);
+
+impl<F: FnOnce()> DropGuard<F> {
+    pub fn new(f: F) -> Self {
+        DropGuard(Some(f))
+    }
+}
+
+impl<F: FnOnce()> Drop for DropGuard<F> {
+    fn drop(&mut self) {
+        if let Some(f) = self.0.take() {
+            f();
+        }
+    }
 }
