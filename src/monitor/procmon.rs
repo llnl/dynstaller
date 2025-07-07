@@ -3,7 +3,6 @@ use std::{
     ffi::OsStr,
     fmt::Debug,
     fs::File,
-    ops::Deref,
     path::{Path, PathBuf},
     process::{ExitStatus, Stdio},
     sync::LazyLock,
@@ -235,7 +234,7 @@ impl ProcmonMonitor {
             }
         }
 
-        log::info!("Processes: {:?}", processes);
+        log::info!("Processes: {processes:?}");
 
         Ok(MonitorResult {
             files,
@@ -266,16 +265,15 @@ impl ProcmonMonitor {
                 })
             });
 
-        let path = match path {
-            Some(p) => p,
-            None => {
-                let path = std::env::temp_dir().join("Procmon64.exe");
-                if !path.exists() {
-                    log::info!("Downloading Procmon to {}", path.display());
-                    Self::download_procmon(&path)?;
-                }
-                path
+        let path = if let Some(p) = path {
+            p
+        } else {
+            let path = std::env::temp_dir().join("Procmon64.exe");
+            if !path.exists() {
+                log::info!("Downloading Procmon to {}", path.display());
+                Self::download_procmon(&path)?;
             }
+            path
         };
 
         if !path.exists() {
@@ -316,7 +314,7 @@ impl ProcmonMonitor {
             .build()
             .new_agent();
 
-        log::info!("Downloading Procmon from {}", URL);
+        log::info!("Downloading Procmon from {URL}");
         let resp = agent.get(URL).call()?;
         if !resp.status().is_success() {
             bail!("Failed to download Procmon: HTTP {}", resp.status());
@@ -774,7 +772,7 @@ static FILESYSTEM_OPS: LazyLock<Vec<FilesystemOperation>> =
     LazyLock::new(|| serde_json::from_str(include_str!("../../procmon/filesystem.json")).unwrap());
 
 fn get_file_operation(operation: &str, evt_type: Option<&str>) -> Option<String> {
-    for op in FILESYSTEM_OPS.deref() {
+    for op in &*FILESYSTEM_OPS {
         // Check if already converted
         if operation == op.to {
             return Some(op.to.clone());

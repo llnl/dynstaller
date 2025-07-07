@@ -80,14 +80,17 @@ impl Usn {
     pub fn from_path(path: &Path) -> Result<Self> {
         let mut c = path.components();
         match (c.next(), c.next(), c.next()) {
-            (Some(Component::Prefix(prefix)), Some(Component::RootDir), None)
-            | (Some(Component::Prefix(prefix)), None, None) => match prefix.kind() {
-                Prefix::Disk(letter) => Self::from_letter(letter.to_ascii_uppercase() as char),
-                Prefix::UNC(server, share) => Self::new(&OsString::from(format!(
-                    "\\\\?\\UNC\\{server:?}\\{share:?}"
-                ))),
-                _ => Self::new(prefix.as_os_str()),
-            },
+            (Some(Component::Prefix(prefix)), Some(Component::RootDir) | None, None) => {
+                match prefix.kind() {
+                    Prefix::Disk(letter) => Self::from_letter(letter.to_ascii_uppercase() as char),
+                    Prefix::UNC(server, share) => Self::new(&OsString::from(format!(
+                        "\\\\?\\UNC\\{}\\{}",
+                        server.display(),
+                        share.display()
+                    ))),
+                    _ => Self::new(prefix.as_os_str()),
+                }
+            }
             (Some(Component::RootDir), None, None) => Self::from_letter('C'),
             _ => {
                 bail!("Invalid path for USN journal: {}", path.display());
@@ -128,9 +131,9 @@ impl Usn {
                 FSCTL_QUERY_USN_JOURNAL,
                 None,
                 0,
-                Some(&mut data as *mut _ as *mut c_void),
+                Some((&raw mut data).cast::<c_void>()),
                 data_size,
-                Some(&mut bytes_received as *mut _),
+                Some(&raw mut bytes_received),
                 None,
             )
         }?;
@@ -156,7 +159,7 @@ impl Usn {
                 bail!("USN record size exceeds header length");
             }
             let header = unsafe {
-                std::ptr::read(data[offset..].as_ptr() as *const USN_RECORD_COMMON_HEADER)
+                std::ptr::read(data[offset..].as_ptr().cast::<USN_RECORD_COMMON_HEADER>())
             };
             if offset + header.RecordLength as usize > data.len() {
                 bail!("USN record size exceeds record length");
@@ -167,7 +170,7 @@ impl Usn {
                         bail!("USN record size exceeds data length");
                     }
                     let record =
-                        unsafe { std::ptr::read(data[offset..].as_ptr() as *const USN_RECORD_V2) };
+                        unsafe { std::ptr::read(data[offset..].as_ptr().cast::<USN_RECORD_V2>()) };
 
                     let filename = if record.FileNameLength > 0 {
                         if record.FileNameOffset as u32 + record.FileNameLength as u32
@@ -203,7 +206,7 @@ impl Usn {
                         bail!("USN record size exceeds data length");
                     }
                     let record =
-                        unsafe { std::ptr::read(data[offset..].as_ptr() as *const USN_RECORD_V3) };
+                        unsafe { std::ptr::read(data[offset..].as_ptr().cast::<USN_RECORD_V3>()) };
 
                     let filename = if record.FileNameLength > 0 {
                         if record.FileNameOffset as u32 + record.FileNameLength as u32
@@ -222,7 +225,7 @@ impl Usn {
                         let filename_data = &data[start..end];
                         let filename_u16 = unsafe {
                             std::slice::from_raw_parts(
-                                filename_data.as_ptr() as *const u16,
+                                filename_data.as_ptr().cast::<u16>(),
                                 record.FileNameLength as usize / size_of::<u16>(),
                             )
                         };
@@ -238,7 +241,7 @@ impl Usn {
                         bail!("USN record size exceeds data length");
                     }
                     let record =
-                        unsafe { std::ptr::read(data[offset..].as_ptr() as *const USN_RECORD_V4) };
+                        unsafe { std::ptr::read(data[offset..].as_ptr().cast::<USN_RECORD_V4>()) };
 
                     let extents = if record.ExtentSize > 0 {
                         let extents_offset = std::mem::offset_of!(USN_RECORD_V4, Extents) as u16;
@@ -256,7 +259,7 @@ impl Usn {
                         let extents_data = &data[start..end];
                         let extents_slice = unsafe {
                             std::slice::from_raw_parts(
-                                extents_data.as_ptr() as *const USN_RECORD_EXTENT,
+                                extents_data.as_ptr().cast::<USN_RECORD_EXTENT>(),
                                 record.ExtentSize as usize / size_of::<USN_RECORD_EXTENT>(),
                             )
                         };
@@ -298,11 +301,11 @@ impl Usn {
             DeviceIoControl(
                 *self.handle,
                 FSCTL_READ_USN_JOURNAL,
-                Some(&input as *const _ as *const c_void),
+                Some((&raw const input).cast::<c_void>()),
                 input_size,
-                Some(data.as_mut_ptr() as *mut c_void),
+                Some(data.as_mut_ptr().cast::<c_void>()),
                 data_size,
-                Some(&mut bytes_received as *mut _),
+                Some(&raw mut bytes_received),
                 None,
             )
         }?;
@@ -329,11 +332,11 @@ impl Usn {
             DeviceIoControl(
                 *self.handle,
                 FSCTL_ENUM_USN_DATA,
-                Some(&input as *const _ as *const c_void),
+                Some((&raw const input).cast::<c_void>()),
                 input_size,
-                Some(data.as_mut_ptr() as *mut c_void),
+                Some(data.as_mut_ptr().cast::<c_void>()),
                 data_size,
-                Some(&mut bytes_received as *mut _),
+                Some(&raw mut bytes_received),
                 None,
             )
         }?;
@@ -453,7 +456,7 @@ impl UsnMonitor {
         let handle = unsafe {
             Owned::new(OpenFileById(
                 *self.usn.handle,
-                &descriptor as *const _,
+                &raw const descriptor,
                 0,
                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                 None,
@@ -466,7 +469,7 @@ impl UsnMonitor {
             GetFileInformationByHandleEx(
                 *handle,
                 FileNormalizedNameInfo,
-                info_buffer.as_mut_ptr() as *mut c_void,
+                info_buffer.as_mut_ptr().cast::<c_void>(),
                 info_buffer.len() as u32,
             )
         }?;
@@ -480,7 +483,7 @@ impl UsnMonitor {
         }
         let file_name_data = &info_buffer[4..(4 + file_name_length)];
         let filename_u16 = unsafe {
-            std::slice::from_raw_parts(file_name_data.as_ptr() as *const u16, file_name_length / 2)
+            std::slice::from_raw_parts(file_name_data.as_ptr().cast::<u16>(), file_name_length / 2)
         };
 
         Ok(PathBuf::from(OsString::from_wide(filename_u16)))
@@ -532,14 +535,10 @@ impl Monitor for UsnMonitor {
     }
 
     fn get_changed_files(&self) -> Result<BTreeMap<PathBuf, ItemMetadata>> {
-        let start = if let Some(usn) = self.initial_usn {
-            usn
-        } else {
+        let Some(start) = self.initial_usn else {
             bail!("Monitor has not been started");
         };
-        let end = if let Some(usn) = self.end_usn {
-            usn
-        } else {
+        let Some(end) = self.end_usn else {
             bail!("Monitor has not been stopped");
         };
         let range = start..end;
@@ -565,10 +564,7 @@ impl Monitor for UsnMonitor {
                     None,
                 ),
             };
-            let filename = match filename {
-                Some(name) => name,
-                None => continue,
-            };
+            let Some(filename) = filename else { continue };
 
             let metadata = self.get_meta(reason);
             if metadata.is_empty() {
@@ -578,7 +574,7 @@ impl Monitor for UsnMonitor {
             const EXCLUDE_MASK: u32 =
                 USN_REASON_CLOSE | USN_REASON_RENAME_OLD_NAME | USN_REASON_REPARSE_POINT_CHANGE;
             if reason & EXCLUDE_MASK != 0 {
-                log::trace!("Skipping change record (excluded): {filename:?}");
+                log::trace!("Skipping change record (excluded): {}", filename.display());
                 continue;
             }
 
@@ -596,9 +592,9 @@ impl Monitor for UsnMonitor {
             let result = self.get_file_path(file_id);
             let filename = if let Err(ref e) = result {
                 if let Some(e) = e.downcast_ref::<windows::core::Error>() {
-                    log::warn!("{filename:?} => {:?}", e.message());
+                    log::warn!("{} => {:?}", filename.display(), e.message());
                     let code: i32 = e.code().0;
-                    PathBuf::from(format!("{:#02X}", code)).join(filename)
+                    PathBuf::from(format!("{code:#02X}")).join(filename)
                 } else {
                     result?
                 }
