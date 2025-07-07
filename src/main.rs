@@ -11,7 +11,7 @@ use std::env::VarError;
 
 use anyhow::{Result, bail};
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
-use clap::{Parser, Subcommand, crate_authors, crate_description, crate_name};
+use clap::{Parser, Subcommand, crate_authors, crate_description};
 use serde::{Deserialize, Serialize};
 use shadow_rs::shadow;
 use tokio::process::Command;
@@ -27,7 +27,7 @@ use crate::{
 shadow!(build);
 
 #[derive(Parser, Serialize, Deserialize)]
-#[command(name = crate_name!())]
+#[command(name = build::PROJECT_NAME)]
 #[command(version = build::CLAP_LONG_VERSION)]
 #[command(author = crate_authors!())]
 #[command(about = crate_description!())]
@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
             let mut cmd = cmd.spawn()?;
 
             let pid = cmd.id();
-            log::info!("Process launched with PID: {:?}", pid);
+            log::info!("Process launched with PID: {pid:?}");
 
             let track_options = TrackOptions {
                 pid,
@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
             }
 
             let status = cmd.wait().await?;
-            log::info!("Process finished with exit status {:?}.", status);
+            log::info!("Process finished with exit status {status:?}.");
 
             log::info!("Stopping monitoring...");
             monitor.stop().await?;

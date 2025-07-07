@@ -11,7 +11,8 @@ use windows::Win32::System::Threading::CREATE_NEW_CONSOLE;
 
 use crate::{
     Cli, CommandType,
-    options::{HostOptions, MonitorOptions, PackerOptions},
+    monitor::procmon::ProcmonMonitor,
+    options::{HostOptions, MonitorMethod, MonitorOptions, PackerOptions},
     utils::{create_temp_name, create_temp_path},
 };
 
@@ -24,7 +25,7 @@ pub struct Hoster {
 impl Hoster {
     pub fn new(
         mut options: HostOptions,
-        monitor_options: MonitorOptions,
+        mut monitor_options: MonitorOptions,
         packer_options: PackerOptions,
     ) -> Result<Self> {
         let mut configuration = xml::Configuration::default();
@@ -47,7 +48,7 @@ impl Hoster {
             });
 
         log::debug!("Copying self to work folder");
-        let dynstaller_exe = format!("dynstaller{}", EXE_SUFFIX);
+        let dynstaller_exe = format!("dynstaller{EXE_SUFFIX}");
         std::fs::copy(
             &std::env::current_exe()?,
             host_work_folder.as_path().join(&dynstaller_exe),
@@ -60,10 +61,23 @@ impl Hoster {
             );
             let ext = cert_path.extension().unwrap_or(OsStr::new("cer"));
             let cert_name = Path::new("cert").with_extension(ext);
-            std::fs::copy(&cert_path, host_work_folder.as_path().join(&cert_name))?;
+            std::fs::copy(cert_path, host_work_folder.as_path().join(&cert_name))?;
             Some(sandbox_work_folder.join(&cert_name))
         } else {
             log::trace!("No certificate path provided, skipping certificate copy.");
+            None
+        };
+
+        monitor_options.procmon_path = if matches!(monitor_options.method, MonitorMethod::Procmon) {
+            log::debug!("Copying Procmon to work folder");
+            let procmon_path = ProcmonMonitor::resolve_procmon_path(&monitor_options)?;
+            let procmon_name = procmon_path
+                .file_name()
+                .unwrap_or(OsStr::new("Procmon.exe"));
+            std::fs::copy(&procmon_path, host_work_folder.as_path().join(procmon_name))?;
+            Some(sandbox_work_folder.join(procmon_name))
+        } else {
+            log::trace!("Monitor method is not Procmon, skipping Procmon copy.");
             None
         };
 
@@ -79,8 +93,7 @@ impl Hoster {
 
         // Copy the process to the work folder
         // If share_process_folder is enabled, we will map the parent folder instead
-        let sandbox_process: PathBuf;
-        if options.share_process_folder {
+        let sandbox_process: PathBuf = if options.share_process_folder {
             let process_folder = options.launch_options.process.parent().ok_or_else(|| {
                 anyhow::anyhow!(
                     "Failed to get parent directory of the process: {}",
@@ -98,7 +111,7 @@ impl Hoster {
                     sandbox_folder: sandbox_work_folder.to_string_lossy().to_string(),
                     read_only: !options.writable_process_folder,
                 });
-            sandbox_process = sandbox_process_folder.join(process_name);
+            sandbox_process_folder.join(process_name)
         } else {
             log::debug!(
                 "Copying process to work folder: {}",
@@ -108,8 +121,8 @@ impl Hoster {
                 &options.launch_options.process,
                 host_work_folder.as_path().join(process_name),
             )?;
-            sandbox_process = sandbox_work_folder.join(process_name);
-        }
+            sandbox_work_folder.join(process_name)
+        };
 
         // Setup the launch script
         configuration.logon_command.command = format!(
@@ -149,7 +162,7 @@ impl Hoster {
         let mut launch_script: Vec<String> = vec![];
         if let Some(cert_path) = cert_path {
             launch_script.extend_from_slice(&[
-                format!("$rootCertPath = {}\n", cert_path.display()),
+                format!("$rootCertPath = {cert_path:?}"),
                 "$rootCert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2".to_string(),
                 "$rootCert.Import($rootCertPath)".to_string(),
                 "$certStore = New-Object System.Security.Cryptography.X509Certificates.X509Store(\"Root\", \"LocalMachine\")".to_string(),
@@ -161,7 +174,7 @@ impl Hoster {
         if options.delay > 0 {
             launch_script.push(format!("Start-Sleep -Seconds {}", options.delay));
         }
-        launch_script.push(format!("$env:DYNSTALLER_ARGS = '{}'", launch_var));
+        launch_script.push(format!("$env:DYNSTALLER_ARGS = '{launch_var}'"));
         launch_script.push(format!(
             "Start-Process {}",
             sandbox_work_folder.join(&dynstaller_exe).display()
@@ -198,10 +211,10 @@ impl Hoster {
 
         let mut cmd = cmd.spawn()?;
         let result = cmd.wait().await?;
-        if !result.success() {
-            bail!("Windows Sandbox exited with a non-zero status: {}", result);
-        } else {
+        if result.success() {
             log::info!("Windows Sandbox completed successfully.");
+        } else {
+            bail!("Windows Sandbox exited with a non-zero status: {result:?}");
         }
 
         std::fs::copy(

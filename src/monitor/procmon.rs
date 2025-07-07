@@ -1,21 +1,30 @@
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     ffi::OsStr,
+    fmt::Debug,
+    fs::File,
     ops::Deref,
-    path::PathBuf,
-    process::Stdio,
+    path::{Path, PathBuf},
+    process::{ExitStatus, Stdio},
     sync::LazyLock,
 };
 
 use anyhow::{Result, bail};
 use async_trait::async_trait;
+use hex_literal::hex;
 use regex::Regex;
 use serde::Deserialize;
+use sha1::{Digest, Sha1};
 use tokio::{process::Command, task::JoinHandle};
 use tokio_util::sync::CancellationToken;
+use ureq::{
+    config::Config,
+    tls::{TlsConfig, TlsProvider},
+};
 use windows::Win32::System::Threading::CREATE_NEW_CONSOLE;
 
 use crate::{
+    build,
     monitor::{
         ItemAction, ItemMetadata, Monitor, MonitorOptions,
         procmon::xml::{Event, LogFile, Process},
@@ -32,7 +41,7 @@ enum MonitorState {
         stop_signal: CancellationToken,
         handle: JoinHandle<Result<MonitorResult>>,
     },
-    Stopped(Result<MonitorResult>),
+    Stopped(MonitorResult),
 }
 
 struct MonitorResult {
@@ -46,9 +55,14 @@ pub struct ProcmonMonitor {
     state: MonitorState,
 }
 
+const HASH: [u8; 20] = hex!("BC18A67AD4057DD36F896A4D411B8FC5B06E5B2F"); // Procmon.exe
+const HASH_64: [u8; 20] = hex!("8ED888A02861142E5EB576385568C2BA0DDD8589"); // Procmon64.exe
+const VERSION: &str = "4.01";
+const URL: &str = "https://live.sysinternals.com/Procmon64.exe";
+
 impl ProcmonMonitor {
-    async fn run_cmd(args: &[&OsStr], stop_signal: Option<CancellationToken>) -> Result<()> {
-        let mut cmd = Command::new("procmon");
+    async fn run_cmd(procmon_path: &Path, args: &[&OsStr]) -> std::io::Result<ExitStatus> {
+        let mut cmd = Command::new(procmon_path);
 
         cmd.args(["/Minimized", "/AcceptEula", "/Quiet"]).args(args);
 
@@ -60,31 +74,7 @@ impl ProcmonMonitor {
         log::info!("Running {:?}", cmd.as_std());
 
         let mut cmd = cmd.spawn()?;
-        match stop_signal {
-            None => {
-                let result = cmd.wait().await?;
-                if !result.success() {
-                    bail!("Procmon exited with status: {result}");
-                }
-            }
-            Some(signal) => {
-                tokio::select! {
-                    s = cmd.wait() => {
-                        let s = s?;
-                        if !s.success() {
-                            bail!("Procmon exited with status: {s}");
-                        }
-                    },
-                    _ = signal.cancelled() => {
-                        log::info!("Cancelling procmon process");
-                        cmd.kill().await?;
-                        cmd.wait().await?;
-                    }
-                };
-            }
-        }
-
-        Ok(())
+        cmd.wait().await
     }
 
     async fn run(
@@ -93,6 +83,9 @@ impl ProcmonMonitor {
         stop_signal: CancellationToken,
         started_signal: CancellationToken,
     ) -> Result<MonitorResult> {
+        let procmon_path = Self::resolve_procmon_path(&options)?;
+        log::info!("Using Procmon path: {}", procmon_path.display());
+
         let pmc_path = create_temp_path(Some("pmc"));
         let _pmc_guard = DropGuard::new({
             let pmc_path = pmc_path.clone();
@@ -124,15 +117,34 @@ impl ProcmonMonitor {
         ];
         let wait_args = [OsStr::new("/WaitForIdle")];
 
-        let run_future = Self::run_cmd(&run_args, Some(stop_signal));
+        let run_end_token = CancellationToken::new();
+        let run_future = async {
+            let ret = Self::run_cmd(&procmon_path, &run_args).await?;
+            run_end_token.cancel();
+            if !ret.success() {
+                log::warn!("Procmon run command exited with status: {ret}");
+            }
+            Ok(())
+        };
         let wait_future = async {
-            Self::run_cmd(&wait_args, None).await?;
+            let ret = Self::run_cmd(&procmon_path, &wait_args).await?;
+            if !ret.success() {
+                bail!("Procmon wait command exited with status: {ret}");
+            }
             started_signal.cancel();
             Ok(())
         };
-        tokio::try_join!(run_future, wait_future)?;
-
-        Self::run_cmd(&[OsStr::new("/Terminate")], None).await?;
+        let cancel_future = async {
+            stop_signal.cancelled().await;
+            if !run_end_token.is_cancelled() {
+                let ret = Self::run_cmd(&procmon_path, &[OsStr::new("/Terminate")]).await?;
+                if !ret.success() {
+                    log::warn!("Procmon terminate command exited with status: {ret}");
+                }
+            }
+            Ok(())
+        };
+        tokio::try_join!(run_future, wait_future, cancel_future)?;
 
         let xml_path = create_temp_path(Some("xml"));
         let _xml_guard = DropGuard::new({
@@ -146,13 +158,13 @@ impl ProcmonMonitor {
         });
 
         Self::run_cmd(
+            &procmon_path,
             &[
                 "/OpenLog".as_ref(),
                 pml_path.as_os_str(),
                 "/SaveAs".as_ref(),
                 xml_path.as_os_str(),
             ],
-            None,
         )
         .await?;
 
@@ -231,6 +243,93 @@ impl ProcmonMonitor {
         })
     }
 
+    pub fn resolve_procmon_path(options: &MonitorOptions) -> Result<PathBuf> {
+        let path = options
+            .procmon_path
+            .clone()
+            .or_else(|| {
+                // Check if Procmon64.exe exists in the current directory
+                let current_dir = std::env::current_dir().ok()?;
+                let procmon_path = current_dir.join("Procmon64.exe");
+                if procmon_path.exists() {
+                    Some(procmon_path)
+                } else {
+                    None
+                }
+            })
+            .or_else(|| {
+                // Check PATH
+                std::env::var_os("PATH").and_then(|path| {
+                    std::env::split_paths(&path)
+                        .flat_map(|p| [p.join("Procmon64.exe"), p.join("Procmon.exe")])
+                        .find(|p| p.exists())
+                })
+            });
+
+        let path = match path {
+            Some(p) => p,
+            None => {
+                let path = std::env::temp_dir().join("Procmon64.exe");
+                if !path.exists() {
+                    log::info!("Downloading Procmon to {}", path.display());
+                    Self::download_procmon(&path)?;
+                }
+                path
+            }
+        };
+
+        if !path.exists() {
+            bail!("Specified Procmon path does not exist: {}", path.display());
+        }
+
+        let hash = {
+            let mut hasher = Sha1::new();
+            std::io::copy(&mut File::open(&path)?, &mut hasher)?;
+            hasher.finalize()
+        };
+        let hash = hash.as_slice();
+
+        if hash == HASH || hash == HASH_64 {
+            Ok(path.clone())
+        } else {
+            bail!(
+                "Invalid Procmon executable found at {}. Remember to use Procmon {VERSION}.",
+                path.display()
+            )
+        }
+    }
+
+    fn download_procmon(path: &PathBuf) -> Result<()> {
+        let agent = Config::builder()
+            .tls_config(
+                TlsConfig::builder()
+                    .provider(TlsProvider::NativeTls)
+                    .disable_verification(true)
+                    .build(),
+            )
+            .user_agent(format!(
+                "{}/{}+{}",
+                build::PROJECT_NAME,
+                build::PKG_VERSION,
+                build::SHORT_COMMIT
+            ))
+            .build()
+            .new_agent();
+
+        log::info!("Downloading Procmon from {}", URL);
+        let resp = agent.get(URL).call()?;
+        if !resp.status().is_success() {
+            bail!("Failed to download Procmon: HTTP {}", resp.status());
+        }
+
+        log::info!("Download started, writing to file...");
+        let mut file = std::fs::File::create(path)?;
+        std::io::copy(&mut resp.into_body().into_reader(), &mut file)?;
+        log::info!("Download completed successfully");
+        Ok(())
+    }
+
+    #[allow(clippy::match_same_arms)]
     fn registry_matches(
         options: &MonitorOptions,
         event: &Event,
@@ -283,6 +382,7 @@ impl ProcmonMonitor {
         Some((PathBuf::from(&event.path), meta))
     }
 
+    #[allow(clippy::match_same_arms)]
     fn file_matches(options: &MonitorOptions, event: &Event) -> Option<(PathBuf, ItemMetadata)> {
         let details = parse_details(&event.detail);
         let operation = get_file_operation(event.operation.as_str(), details.get("Type").copied())?;
@@ -524,7 +624,7 @@ impl Monitor for ProcmonMonitor {
                 handle,
             } => {
                 stop_signal.cancel();
-                let result = handle.await?;
+                let result = handle.await??;
                 self.state = MonitorState::Stopped(result);
             }
             v => {
@@ -535,25 +635,16 @@ impl Monitor for ProcmonMonitor {
     }
 
     fn get_changed_files(&self) -> Result<BTreeMap<PathBuf, ItemMetadata>> {
-        if let MonitorState::Stopped(changes) = &self.state {
-            match changes {
-                Ok(result) => Ok(result.files.clone()),
-                Err(e) => bail!("Error retrieving changes: {:?}", e),
-            }
+        if let MonitorState::Stopped(result) = &self.state {
+            Ok(result.files.clone())
         } else {
             bail!("Monitor has not been stopped or no changes recorded")
         }
     }
 
     fn get_changed_registry_keys(&self) -> Option<Result<BTreeMap<PathBuf, ItemMetadata>>> {
-        if let MonitorState::Stopped(changes) = &self.state {
-            match changes {
-                Ok(result) => Some(Ok(result.registry_keys.clone())),
-                Err(e) => Some(Err(anyhow::anyhow!(
-                    "Error retrieving registry keys: {:?}",
-                    e
-                ))),
-            }
+        if let MonitorState::Stopped(result) = &self.state {
+            Some(Ok(result.registry_keys.clone()))
         } else {
             None
         }

@@ -29,6 +29,11 @@ pub struct MonitorOptions {
     /// This option is only supported by the Procmon method.
     #[arg(long = "registry", short = 'R')]
     pub add_registry: bool,
+
+    /// The path to the Procmon executable. If not specified, it will be downloaded automatically.
+    /// If not provided, the PATH will be searched for `Procmon64.exe`.
+    #[arg(long = "procmon")]
+    pub procmon_path: Option<PathBuf>,
 }
 
 #[derive(Args, Serialize, Deserialize, Debug, Clone)]

@@ -39,6 +39,11 @@ serde_json = "1.0.140"
 zip = "4.2.0"
 time = { version = "0.3.41", features = ["serde", "formatting"] }
 base64 = "0.22.1"
+ureq = { version = "3.0.12", default-features = false, features = [
+    "native-tls",
+] }
+sha1 = "0.10.6"
+hex-literal = "1.0.0"
 
 [build-dependencies]
 shadow-rs = "1.1.1"
