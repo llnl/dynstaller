@@ -36,11 +36,11 @@ impl Packer {
     }
 
     fn files_normalized(&self) -> Result<BTreeMap<PathBuf, ItemMetadata>> {
-        self.monitor
-            .get_changed_files()?
-            .into_iter()
-            .map(|(p, m)| Self::normalize_path(p).map(|p| (p, m)))
-            .collect::<Result<BTreeMap<_, _>, _>>()
+        self.monitor.get_changed_files().map(|f| {
+            f.into_iter()
+                .map(|(p, m)| (Self::normalize_path(p), m))
+                .collect()
+        })
     }
 
     fn metadata(&self) -> Result<PackerMetadata> {
@@ -53,7 +53,7 @@ impl Packer {
             registry_keys: self
                 .monitor
                 .get_changed_registry_keys()
-                .unwrap_or_else(|| Ok(Default::default()))?,
+                .unwrap_or_else(|| Ok(BTreeMap::default()))?,
         })
     }
 
@@ -81,7 +81,7 @@ impl Packer {
 
         // Write all changed files
         let changed_files = self.files_normalized()?;
-        let base_path = Self::normalize_path(self.monitor_options.path.clone())?;
+        let base_path = Self::normalize_path(self.monitor_options.path.clone());
         log::debug!(
             "Base path: {} -> {}",
             self.monitor_options.path.display(),
@@ -123,17 +123,7 @@ impl Packer {
             }
 
             // Create safe ZIP entry path using the helper function
-            let zip_path = match Self::create_zip_entry_path(file_path, &base_path) {
-                Ok(path) => path,
-                Err(e) => {
-                    log::error!(
-                        "Failed to create ZIP path for {}: {}",
-                        file_path.display(),
-                        e
-                    );
-                    continue;
-                }
-            };
+            let zip_path = Self::create_zip_entry_path(file_path, &base_path);
 
             log::debug!(
                 "Writing file ({} bytes): {} -> {}",
@@ -143,7 +133,7 @@ impl Packer {
             );
 
             if let Err(e) = zip.start_file(&zip_path, zip::write::SimpleFileOptions::default()) {
-                log::error!("Failed to start ZIP entry for {}: {}", zip_path, e);
+                log::error!("Failed to start ZIP entry for {zip_path}: {e}");
                 continue;
             }
 
@@ -185,7 +175,7 @@ impl Packer {
 
     /// Normalize a Windows path by resolving it to its canonical form
     /// This handles UNC paths, relative paths, and other complex Windows path formats
-    fn normalize_path<P: AsRef<Path>>(path: P) -> Result<PathBuf> {
+    fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
         let mut path = path.as_ref().to_owned();
 
         let mut components = path.components();
@@ -197,33 +187,32 @@ impl Packer {
             path = drive_root;
         }
 
-        match path.canonicalize() {
-            Ok(canonical) => Ok(canonical),
-            Err(_) => {
-                // If canonicalization fails, at least normalize components
-                let mut normalized = PathBuf::new();
+        if let Ok(canonical) = path.canonicalize() {
+            canonical
+        } else {
+            // If canonicalization fails, at least normalize components
+            let mut normalized = PathBuf::new();
 
-                for component in path.components() {
-                    match component {
-                        Component::ParentDir => {
-                            normalized.pop();
-                        }
-                        Component::CurDir => {
-                            // Skip current directory components
-                        }
-                        _ => {
-                            normalized.push(component);
-                        }
+            for component in path.components() {
+                match component {
+                    Component::ParentDir => {
+                        normalized.pop();
+                    }
+                    Component::CurDir => {
+                        // Skip current directory components
+                    }
+                    _ => {
+                        normalized.push(component);
                     }
                 }
-
-                Ok(normalized)
             }
+
+            normalized
         }
     }
 
     /// Create a safe ZIP entry path from a file path relative to a base path
-    fn create_zip_entry_path(normalized_file: &Path, normalized_base: &Path) -> Result<String> {
+    fn create_zip_entry_path(normalized_file: &Path, normalized_base: &Path) -> String {
         // Try to get relative path from normalized paths
         let relative_path = match normalized_file.strip_prefix(normalized_base) {
             Ok(rel_path) => rel_path,
@@ -232,8 +221,7 @@ impl Packer {
                 // This is a fallback for cases where paths are on different drives/volumes
                 normalized_file
                     .file_name()
-                    .map(Path::new)
-                    .unwrap_or_else(|| Path::new("unknown_file"))
+                    .map_or_else(|| Path::new("unknown_file"), Path::new)
             }
         };
 
@@ -243,7 +231,7 @@ impl Packer {
             .replace('\\', "/")
             .replace([':', '|', '<', '>', '"', '*', '?'], "_");
 
-        Ok(format!("files/{}", zip_path))
+        format!("files/{zip_path}")
     }
 }
 

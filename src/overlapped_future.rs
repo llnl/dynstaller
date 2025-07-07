@@ -71,11 +71,11 @@ impl OverlappedFuture {
 
     pub fn bytes_transferred(&self) -> Option<u32> {
         match self.0.read().unwrap().status {
-            OverlappedStatus::Ok { bytes_transferred } => Some(bytes_transferred),
-            OverlappedStatus::Err {
+            OverlappedStatus::Ok { bytes_transferred }
+            | OverlappedStatus::Err {
                 bytes_transferred, ..
             } => Some(bytes_transferred),
-            _ => None,
+            OverlappedStatus::Pending => None,
         }
     }
 
@@ -110,7 +110,7 @@ impl OverlappedData {
     }
 
     fn overlapped(&self) -> *const OVERLAPPED {
-        self.overlapped.as_ref().get_ref() as *const _
+        std::ptr::from_ref(self.overlapped.as_ref().get_ref())
     }
 
     // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-hasoverlappediocompleted
@@ -127,8 +127,8 @@ impl OverlappedData {
         let result = unsafe {
             GetOverlappedResultEx(
                 self.handle,
-                self.overlapped.as_ref().get_ref() as *const _,
-                &mut bytes_transferred as *mut _,
+                self.overlapped(),
+                &raw mut bytes_transferred,
                 0,
                 false,
             )
@@ -137,12 +137,7 @@ impl OverlappedData {
     }
 
     fn cancel(&self) -> Result<()> {
-        unsafe {
-            CancelIoEx(
-                self.handle,
-                Some(self.overlapped.as_ref().get_ref() as *const _),
-            )
-        }
+        unsafe { CancelIoEx(self.handle, Some(self.overlapped())) }
     }
 }
 
@@ -183,7 +178,7 @@ impl Drop for OverlappedFutureImpl {
     fn drop(&mut self) {
         if !self.data.is_completed() {
             if let Err(e) = self.data.cancel() {
-                log::error!("Failed to cancel overlapped operation: {:?}", e);
+                log::error!("Failed to cancel overlapped operation: {e:?}");
             }
         }
     }

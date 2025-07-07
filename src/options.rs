@@ -102,7 +102,7 @@ pub enum MonitorMethod {
     /// Can only track files in NTFS volumes. This method only tracks actual disk changes, not file system events.
     /// Does not support registry changes or PID filtering.
     Usn,
-    /// Uses the Windows API (ReadDirectoryChangesEx) to monitor file changes. This is the only method that can be
+    /// Uses the Windows API (`ReadDirectoryChangesEx`) to monitor file changes. This is the only method that can be
     /// run without administrator privileges.
     /// Does not support registry changes or PID filtering.
     #[value(name = "winapi")]

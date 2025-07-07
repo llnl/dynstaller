@@ -39,9 +39,8 @@ pub fn resume_process(pid: u32) -> Result<()> {
         }
     }
 
-    let tid = match tid {
-        Some(tid) => tid,
-        None => bail!("No thread found for process ID {}", pid),
+    let Some(tid) = tid else {
+        bail!("No thread found for process ID {pid}")
     };
 
     let thread_handle = unsafe { Owned::new(OpenThread(THREAD_SUSPEND_RESUME, false, tid)?) };

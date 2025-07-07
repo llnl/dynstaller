@@ -434,54 +434,6 @@ pub struct UsnMonitor {
 }
 
 impl UsnMonitor {
-    // fn convert_reason(reason: u32) -> Vec<Reason> {
-    //     const REASONS: [(u32, Reason); 23] = [
-    //         (USN_REASON_BASIC_INFO_CHANGE, Reason::Attributes),
-    //         (USN_REASON_CLOSE, Reason::Closed),
-    //         (USN_REASON_COMPRESSION_CHANGE, Reason::CompressionChanged),
-    //         (USN_REASON_DATA_EXTEND, Reason::Extended),
-    //         (USN_REASON_DATA_OVERWRITE, Reason::Overwritten),
-    //         (USN_REASON_DATA_TRUNCATION, Reason::Truncated),
-    //         (USN_REASON_EA_CHANGE, Reason::Attributes),
-    //         (USN_REASON_ENCRYPTION_CHANGE, Reason::EncryptionChanged),
-    //         (USN_REASON_FILE_CREATE, Reason::Created),
-    //         (USN_REASON_FILE_DELETE, Reason::Deleted),
-    //         (USN_REASON_HARD_LINK_CHANGE, Reason::HardLinkChanged),
-    //         (USN_REASON_INDEXABLE_CHANGE, Reason::IndexableChanged),
-    //         (USN_REASON_INTEGRITY_CHANGE, Reason::IntegrityChanged),
-    //         (USN_REASON_NAMED_DATA_EXTEND, Reason::NamedDataExtended),
-    //         (
-    //             USN_REASON_NAMED_DATA_OVERWRITE,
-    //             Reason::NamedDataOverwritten,
-    //         ),
-    //         (USN_REASON_NAMED_DATA_TRUNCATION, Reason::NamedDataTruncated),
-    //         (USN_REASON_OBJECT_ID_CHANGE, Reason::ObjectIdChanged),
-    //         (USN_REASON_RENAME_NEW_NAME, Reason::Renamed),
-    //         (USN_REASON_RENAME_OLD_NAME, Reason::Renamed),
-    //         (USN_REASON_REPARSE_POINT_CHANGE, Reason::ReparsePointChanged),
-    //         (USN_REASON_SECURITY_CHANGE, Reason::SecurityChanged),
-    //         (USN_REASON_STREAM_CHANGE, Reason::NamedDataChanged),
-    //         (USN_REASON_TRANSACTED_CHANGE, Reason::Transacted),
-    //     ];
-
-    //     let mut reasons = Vec::new();
-    //     for (mask, reason_enum) in REASONS.iter() {
-    //         if reason & mask != 0 {
-    //             reasons.push(*reason_enum);
-    //         }
-    //     }
-
-    //     reasons
-    // }
-
-    // fn convert_timestamp(timestamp: i64) -> SystemTime {
-    //     // timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));
-    //     // timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));
-    //     let seconds = (timestamp / 10_000_000) - 11_644_473_600;
-    //     let nanos = ((timestamp % 10_000_000) * 100) as u32;
-    //     SystemTime::UNIX_EPOCH + std::time::Duration::new(seconds as u64, nanos)
-    // }
-
     fn get_file_path(&self, file_id: Either<i64, FILE_ID_128>) -> Result<PathBuf> {
         let descriptor: FILE_ID_DESCRIPTOR = match file_id {
             Either::Left(id) => FILE_ID_DESCRIPTOR {

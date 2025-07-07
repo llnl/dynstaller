@@ -72,7 +72,7 @@ impl WinApi {
                 bail!("Insufficient data for FILE_NOTIFY_EXTENDED_INFORMATION");
             }
             let info =
-                unsafe { std::ptr::read(data.as_ptr() as *const FILE_NOTIFY_EXTENDED_INFORMATION) };
+                unsafe { std::ptr::read(data.as_ptr().cast::<FILE_NOTIFY_EXTENDED_INFORMATION>()) };
 
             let (info_data, remaining_data) = if info.NextEntryOffset != 0 {
                 if data.len() < info.NextEntryOffset as usize {
@@ -96,7 +96,7 @@ impl WinApi {
                     &info_data[name_offset..name_offset + info.FileNameLength as usize];
                 let filename_u16 = unsafe {
                     std::slice::from_raw_parts(
-                        filename_data.as_ptr() as *const u16,
+                        filename_data.as_ptr().cast::<u16>(),
                         info.FileNameLength as usize / size_of::<u16>(),
                     )
                 };
@@ -120,7 +120,7 @@ impl WinApi {
         let (_, buffer, _) = unsafe { scratch.align_to_mut::<u32>() };
         let buffer = unsafe {
             std::slice::from_raw_parts_mut(
-                buffer.as_mut_ptr() as *mut u8,
+                buffer.as_mut_ptr().cast::<u8>(),
                 std::mem::size_of_val(buffer),
             )
         };
@@ -130,12 +130,12 @@ impl WinApi {
         unsafe {
             ReadDirectoryChangesExW(
                 *self.handle,
-                buffer.as_mut_ptr() as _,
+                buffer.as_mut_ptr().cast(),
                 buffer_size as u32,
                 true,
                 filter,
                 None,
-                Some(self.future.overlapped() as *mut _),
+                Some(self.future.overlapped().cast_mut()),
                 None,
                 ReadDirectoryNotifyExtendedInformation,
             )
@@ -211,7 +211,7 @@ impl Monitor for WinApiMonitor {
     fn new(options: MonitorOptions, _track_options: TrackOptions) -> Result<Self> {
         Ok(Self {
             api: Arc::new(WinApi::new(options.path.as_os_str())?),
-            state: Default::default(),
+            state: MonitorState::default(),
             options,
         })
     }
@@ -231,8 +231,7 @@ impl Monitor for WinApiMonitor {
                     Ok(changes) => changes,
                     Err(e)
                         if e.downcast_ref::<windows::core::Error>()
-                            .map(|e| *e == ERROR_OPERATION_ABORTED.into())
-                            .unwrap_or_default() =>
+                            .is_some_and(|e| *e == ERROR_OPERATION_ABORTED.into()) =>
                     {
                         break;
                     }
@@ -244,7 +243,7 @@ impl Monitor for WinApiMonitor {
                     let meta = Self::get_meta(&options, change.info.Action);
                     if !meta.is_empty() {
                         let filename = options.path.join(&change.filename);
-                        log::trace!("File {:?}: {:?}", change.info.Action, filename);
+                        log::trace!("File {:?}: {}", change.info.Action, filename.display());
                         ret.entry(filename).or_default().merge(&meta);
                     }
                 }
