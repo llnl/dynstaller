@@ -3,6 +3,7 @@ use std::{
     ffi::OsStr,
     fmt::Debug,
     fs::File,
+    io::Read,
     path::{Path, PathBuf},
     process::{ExitStatus, Stdio},
     sync::LazyLock,
@@ -283,8 +284,18 @@ impl ProcmonMonitor {
         }
 
         let hash = {
+            let mut file = File::open(&path)?;
             let mut hasher = Sha1::new();
-            std::io::copy(&mut File::open(&path)?, &mut hasher)?;
+
+            // Create an 8KB buffer
+            let mut buffer = [0; 8192];
+            loop {
+                let bytes_read = file.read(&mut buffer)?;
+                if bytes_read == 0 {
+                    break; // EOF
+                }
+                hasher.update(&buffer[..bytes_read]);
+            }
             hasher.finalize()
         };
         let hash = hash.as_slice();
