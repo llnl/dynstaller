@@ -1,6 +1,9 @@
 use std::{iter::repeat_with, path::PathBuf};
 
-use anyhow::{Result, bail};
+use anyhow::Result;
+#[cfg(windows)]
+use anyhow::bail;
+#[cfg(windows)]
 use windows::{
     Win32::{
         Foundation::ERROR_NO_MORE_FILES,
@@ -15,6 +18,7 @@ use windows::{
     core::Owned,
 };
 
+#[cfg(windows)]
 pub fn resume_process(pid: u32) -> Result<()> {
     let snapshot = unsafe { Owned::new(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid)?) };
 
@@ -46,6 +50,11 @@ pub fn resume_process(pid: u32) -> Result<()> {
     let thread_handle = unsafe { Owned::new(OpenThread(THREAD_SUSPEND_RESUME, false, tid)?) };
     unsafe { ResumeThread(*thread_handle) };
 
+    Ok(())
+}
+
+#[cfg(not(windows))]
+pub fn resume_process(_pid: u32) -> Result<()> {
     Ok(())
 }
 

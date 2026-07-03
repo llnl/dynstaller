@@ -2,6 +2,7 @@
 
 mod monitor;
 mod options;
+#[cfg(windows)]
 mod overlapped_future;
 mod packer;
 mod utils;
@@ -15,6 +16,7 @@ use clap::{Parser, Subcommand, crate_authors, crate_description};
 use serde::{Deserialize, Serialize};
 use shadow_rs::shadow;
 use tokio::process::Command;
+#[cfg(windows)]
 use windows::Win32::System::Threading::CREATE_SUSPENDED;
 
 use crate::{
@@ -71,8 +73,9 @@ async fn main() -> Result<()> {
         CommandType::GuestLaunch(launch_options) => {
             log::info!("Launching process: {}", launch_options.process.display());
             let mut cmd = Command::new(&launch_options.process);
-            cmd.args(launch_options.args)
-                .creation_flags(CREATE_SUSPENDED.0);
+            cmd.args(launch_options.args);
+            #[cfg(windows)]
+            cmd.creation_flags(CREATE_SUSPENDED.0);
             let mut cmd = cmd.spawn()?;
 
             let pid = cmd.id();

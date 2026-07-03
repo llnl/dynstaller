@@ -7,7 +7,9 @@ use serde::Serialize;
 use crate::options::{MonitorMethod, MonitorOptions, TrackOptions};
 
 pub mod procmon;
+#[cfg(windows)]
 pub mod usn;
+#[cfg(windows)]
 pub mod winapi;
 
 #[async_trait]
@@ -89,7 +91,9 @@ impl From<ItemAction> for ItemMetadata {
 
 pub fn new_boxed(options: MonitorOptions, track_options: TrackOptions) -> Result<Box<dyn Monitor>> {
     match options.method {
+        #[cfg(windows)]
         MonitorMethod::Usn => Ok(Box::new(usn::UsnMonitor::new(options, track_options)?)),
+        #[cfg(windows)]
         MonitorMethod::WinApi => Ok(Box::new(winapi::WinApiMonitor::new(
             options,
             track_options,
@@ -98,5 +102,10 @@ pub fn new_boxed(options: MonitorOptions, track_options: TrackOptions) -> Result
             options,
             track_options,
         )?)),
+        #[cfg(not(windows))]
+        other => anyhow::bail!(
+            "Monitor method `{other:?}` is only supported on Windows; \
+             use the Procmon method on this platform."
+        ),
     }
 }

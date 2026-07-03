@@ -20,6 +20,7 @@ use ureq::{
     config::Config,
     tls::{TlsConfig, TlsProvider},
 };
+#[cfg(windows)]
 use windows::Win32::System::Threading::CREATE_NEW_CONSOLE;
 
 use crate::{
@@ -65,6 +66,7 @@ impl ProcmonMonitor {
 
         cmd.args(["/Minimized", "/AcceptEula", "/Quiet"]).args(args);
 
+        #[cfg(windows)]
         cmd.creation_flags(CREATE_NEW_CONSOLE.0);
         cmd.stdin(Stdio::null());
         cmd.stdout(Stdio::inherit());

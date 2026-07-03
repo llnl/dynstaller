@@ -7,6 +7,7 @@ use std::{
 use anyhow::{Result, bail};
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use tokio::process::Command;
+#[cfg(windows)]
 use windows::Win32::System::Threading::CREATE_NEW_CONSOLE;
 
 use crate::{
@@ -205,6 +206,7 @@ impl Hoster {
 
         cmd.arg(wsb_file);
 
+        #[cfg(windows)]
         cmd.creation_flags(CREATE_NEW_CONSOLE.0);
 
         log::info!("Starting Windows Sandbox...");
