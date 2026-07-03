@@ -158,17 +158,13 @@ impl Packer {
         let path = path.as_ref();
 
         let mut components = path.components();
-        if let (
-            Some(Component::Prefix(_)),
-            Some(Component::RootDir),
-            Some(Component::Normal(name)),
-        ) = (components.next(), components.next(), components.next())
+        if let (Some(Component::Prefix(_)), Some(Component::RootDir), Some(Component::Normal(name))) =
+            (components.next(), components.next(), components.next())
+            && name.to_string_lossy().starts_with('$')
         {
-            if name.to_string_lossy().starts_with('$') {
-                // Check for reserved names like $Extend, $Mft, etc.
-                // https://flatcap.github.io/linux-ntfs/ntfs/files/index.html
-                return true;
-            }
+            // Check for reserved names like $Extend, $Mft, etc.
+            // https://flatcap.github.io/linux-ntfs/ntfs/files/index.html
+            return true;
         }
         false
     }

@@ -110,11 +110,11 @@ impl Usn {
                 FILE_FLAGS_AND_ATTRIBUTES(0),
                 None,
             );
-            if let Err(e) = &handle {
-                if e.code() == ERROR_ACCESS_DENIED.into() {
-                    log::error!("Access denied to USN journal at path: {}", path.display());
-                    log::error!("You may have to run as administrator.");
-                }
+            if let Err(e) = &handle
+                && e.code() == ERROR_ACCESS_DENIED.into()
+            {
+                log::error!("Access denied to USN journal at path: {}", path.display());
+                log::error!("You may have to run as administrator.");
             }
             Owned::new(handle?)
         };
@@ -411,12 +411,11 @@ impl Usn {
         loop {
             #[allow(deprecated)]
             let result = self.enum_journal(input, &mut scratch);
-            if let Err(ref e) = result {
-                if let Some(e) = e.downcast_ref::<windows::core::Error>() {
-                    if e.code() == ERROR_HANDLE_EOF.into() {
-                        break;
-                    }
-                }
+            if let Err(ref e) = result
+                && let Some(e) = e.downcast_ref::<windows::core::Error>()
+                && e.code() == ERROR_HANDLE_EOF.into()
+            {
+                break;
             }
             let (next_number, cur_records) = result?;
             if cur_records.is_empty() {

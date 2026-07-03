@@ -176,10 +176,10 @@ impl Future for OverlappedFuture {
 
 impl Drop for OverlappedFutureImpl {
     fn drop(&mut self) {
-        if !self.data.is_completed() {
-            if let Err(e) = self.data.cancel() {
-                log::error!("Failed to cancel overlapped operation: {e:?}");
-            }
+        if !self.data.is_completed()
+            && let Err(e) = self.data.cancel()
+        {
+            log::error!("Failed to cancel overlapped operation: {e:?}");
         }
     }
 }

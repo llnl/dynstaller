@@ -211,26 +211,26 @@ impl ProcmonMonitor {
                 continue;
             }
 
-            if let Some(filter_pid) = track_options.pid {
-                if !Self::pid_matches(
+            if let Some(filter_pid) = track_options.pid
+                && !Self::pid_matches(
                     filter_pid,
                     !track_options.no_children,
                     proc_map.as_ref().unwrap(),
                     &event,
-                ) {
-                    continue;
-                }
+                )
+            {
+                continue;
             }
 
             if let Some((key, metadata)) = Self::registry_matches(&options, &event) {
                 if !metadata.is_empty() {
                     registry_keys.entry(key).or_default().merge(&metadata);
                 }
-            } else if let Some((file, metadata)) = Self::file_matches(&options, &event) {
-                if !metadata.is_empty() {
-                    files.entry(file).or_default().merge(&metadata);
-                    processes.insert(event.process_name.clone());
-                }
+            } else if let Some((file, metadata)) = Self::file_matches(&options, &event)
+                && !metadata.is_empty()
+            {
+                files.entry(file).or_default().merge(&metadata);
+                processes.insert(event.process_name.clone());
             }
         }
 
@@ -476,13 +476,13 @@ impl ProcmonMonitor {
             "SetDispositionInformationEx" => &[ItemAction::Modify],
             "SetReplaceCompletionInformation" => &[ItemAction::Modify],
             "SetRenameInformationEx" | "SetRenameInformationExBypassAccessCheck" => {
-                if let Some(&path) = details.get("FileName") {
-                    if !path.is_empty() {
-                        return Some((
-                            PathBuf::from(path),
-                            ItemMetadata::default().modify(options.renaming),
-                        ));
-                    }
+                if let Some(&path) = details.get("FileName")
+                    && !path.is_empty()
+                {
+                    return Some((
+                        PathBuf::from(path),
+                        ItemMetadata::default().modify(options.renaming),
+                    ));
                 }
                 &[ItemAction::Rename]
             }
@@ -785,12 +785,11 @@ fn get_file_operation(operation: &str, evt_type: Option<&str>) -> Option<String>
                     return Some(name.clone());
                 }
 
-                if let Some(evt_type) = evt_type {
-                    if (additional.irp == operation || additional.fastio == operation)
-                        && name == evt_type
-                    {
-                        return Some(name.clone());
-                    }
+                if let Some(evt_type) = evt_type
+                    && (additional.irp == operation || additional.fastio == operation)
+                    && name == evt_type
+                {
+                    return Some(name.clone());
                 }
             }
         }
