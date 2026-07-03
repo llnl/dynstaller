@@ -29,8 +29,8 @@ or [open an issue](https://github.com/LLNL/dynstaller/issues/new/choose) for bug
 
 ## License
 
-dynstaller is released under the MIT license. See the [LICENSE](./LICENSE)
-and [NOTICE](./NOTICE) files for details. All new contributions must be made
+dynstaller is released under the MIT license. See the [LICENSE](https://github.com/LLNL/dynstaller/blob/main/LICENSE)
+and [NOTICE](https://github.com/LLNL/dynstaller/blob/main/NOTICE) files for details. All new contributions must be made
 under this license.
 
 # Indices and tables
