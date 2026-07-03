@@ -37,7 +37,7 @@ base64 = "0.22.1"
 ureq = { version = "3.0.12", default-features = false, features = [
     "native-tls",
 ] }
-sha1 = "0.10.6"
+sha1 = "0.11.0"
 hex-literal = "1.0.0"
 
 [target.'cfg(windows)'.dependencies]
