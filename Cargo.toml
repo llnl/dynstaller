@@ -41,7 +41,7 @@ sha1 = "0.11.0"
 hex-literal = "1.0.0"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.61.1", features = [
+windows = { version = "0.62.2", features = [
     "Win32_Foundation",
     "Win32_Security",
     "Win32_Storage_FileSystem",
